@@ -341,6 +341,7 @@ class ICLoraPipeline(BasePipeline):
             num_frames=num_frames,
             video_encoder=video_encoder,
             reference_downscale_factor=self.reference_downscale_factor,
+            frame_rate=frame_rate,
             conditioning_attention_strength=conditioning_attention_strength,
             conditioning_attention_mask=conditioning_attention_mask,
         )
@@ -602,6 +603,7 @@ class ICLoraPipeline(BasePipeline):
                 num_frames=num_frames,
                 video_encoder=self.vae_encoder,
                 reference_downscale_factor=self.reference_downscale_factor,
+                frame_rate=frame_rate,
                 conditioning_attention_strength=conditioning_attention_strength,
                 conditioning_attention_mask=conditioning_attention_mask,
             )

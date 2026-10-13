@@ -117,3 +117,41 @@ class TestFrameAlignment:
         monkeypatch.setattr(iclora_utils, "probe_video_info", lambda _p: _FakeVideoInfo(num_frames=1))
         _invoke(num_frames=121)
         assert captured_load == [9]
+
+
+@pytest.mark.parametrize("fps", [16.0, 24.0])
+@pytest.mark.parametrize("scale", [1, 2])
+def test_reference_timestamps_match_generation(captured_load, fps, scale):
+    from ltx_core_mlx.utils.positions import compute_video_positions
+
+    conditionings = []
+    iclora_utils.append_ic_lora_reference_video_conditionings(
+        conditionings,
+        [("/fake/path.mp4", 1.0)],
+        height=64,
+        width=64,
+        num_frames=49,
+        video_encoder=_FakeEncoder(),
+        reference_downscale_factor=scale,
+        frame_rate=fps,
+    )
+    expected = compute_video_positions(7, 1, 1, frame_rate=fps)
+    assert bool(mx.allclose(conditionings[0].reference_positions, expected).item())
+
+
+@pytest.mark.parametrize("fps", [16.0, 24.0])
+def test_pipeline_forwards_reference_frame_rate(monkeypatch, fps):
+    from ltx_pipelines_mlx import ic_lora
+
+    captured = []
+    monkeypatch.setattr(
+        ic_lora,
+        "append_ic_lora_reference_video_conditionings",
+        lambda *args, **kwargs: captured.append(kwargs["frame_rate"]),
+    )
+    pipeline = object.__new__(ic_lora.ICLoraPipeline)
+    pipeline.reference_downscale_factor = 2
+    pipeline._create_conditionings(
+        None, [("/fake/path.mp4", 1.0)], 64, 64, 49, frame_rate=fps, video_encoder=_FakeEncoder()
+    )
+    assert captured == [fps]
